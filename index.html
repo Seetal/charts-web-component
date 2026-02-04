@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="bar-chart.css">
+</head>
+<body>
+  <div class="wrapper">
+    <bar-chart id="barChart" class="chart" data-tick-marks="5" data-show-patterns="true" data-show-legend="true">
+    </bar-chart>
+  </div>
+
+  <template data-bar-chart-template>
+    <div class="chart__layout" data-layout>
+      <div class="chart__inner" data-inner>
+        <div class="chart__y-axis" data-y-axis></div>
+        <div class="chart__bars" data-bars></div>
+      </div>
+      <div class="chart__x-axis" data-x-axis></div>
+    </div>
+    <div class="chart__legend" data-legend></div>
+  </template>
+
+  <div class="wrapper">
+    <line-chart id="lineChart" class="chart" data-tick-marks="5">
+    </line-chart>
+  </div>
+  
+  <button id="updateButton">Update Data</button>
+  <button id="addNew">Add new</button>
+  <script src="bar-chart.js"></script>
+  <script src="line-chart.js"></script>
+</body>
+</html>
