@@ -1,14 +1,18 @@
-class BarChart extends HTMLElement {
+class Chart extends HTMLElement {
   constructor() {
     super();
     this.data = null;
+    this.chartType = this.getAttribute('data-type') || 'bar';
+    this.linePointShapes = ['circle', 'square', 'diamond', 'up-triangle', 'down-triangle', 'box', 'ring'];
+    this.lineTransitionPoint = 0;
   }
   
   connectedCallback() {
-    const template = document.querySelector('[data-bar-chart-template]').content.cloneNode(true);
+    const template = document.querySelector('[data-chart-template]').content.cloneNode(true);
     this.appendChild(template);
     this.chartInner = this.querySelector('[data-inner]');
     this.bars = this.querySelector('[data-bars]');
+    this.lines = this.querySelector('[data-lines]');
     this.yAxis = this.querySelector('[data-y-axis]');
     this.xAxis = this.querySelector('[data-x-axis]');
     this.showPatterns = this.getAttribute('data-show-patterns') === 'true';
@@ -28,6 +32,7 @@ class BarChart extends HTMLElement {
       return;
     }
     this.data = data;
+    this.lineTransitionPoint = 0;
     this.setYAxisValues();
 
     if (this.minValue < 0) {
@@ -96,9 +101,14 @@ class BarChart extends HTMLElement {
 
   generateBarGroups() {
     return this.data.values.map((item, index) => `
-      <ul class="chart__bar-group" id="bar-${index}">
-        ${this.generateBars(item)}
-      </ul>
+      <div class="chart__bar-group">
+        <p class="chart__bar-group-label">
+          ${item.label}
+        </p>
+        <ul class="chart__bar-list">
+          ${this.generateBars(item)}
+        </ul>
+      </div>
     `).join('');
   }
 
@@ -109,12 +119,69 @@ class BarChart extends HTMLElement {
     });
   }
 
-  generateXAxis() {
-    return this.data.values.map((item) => `
-      <div class="chart__y-axis-label">
-        ${item.label}
-      </div>
-    `).join('');
+  roundToTwoDecimalPlaces(value) {
+    return Math.round(value * 100) / 100;
+  }
+
+  generateLinePoints(item, itemIndex) {
+    const linesHtml = item.dataSets.map((dataSet, index) => {
+      const value = Object.values(dataSet)[0];
+      const topPosition = (this.yAxisMaxValue - value) / this.yAxisRange * 100;
+      const lineColor = this.data.colors[index];
+      const nextValue = itemIndex < this.data.values.length - 1 ? Object.values(this.data.values[itemIndex + 1].dataSets[index])[0] : null;
+      if (nextValue === null) {
+        return `<li class="chart__line-point" style="top: ${topPosition}%; --dataset-color: ${lineColor}" title="${value}">
+          <span class="chart__line-point-shape ${this.linePointShapes[index]}"></span>
+        </li>`;
+      }
+      const containerWidth = this.lines.clientWidth;
+      const containerHeight = this.lines.clientHeight;
+      const nextValueDifference = this.roundToTwoDecimalPlaces(Math.abs(value - nextValue));
+      const differencePercentage = this.roundToTwoDecimalPlaces((nextValueDifference / this.yAxisRange * 100)) || 0;
+      const trianglePixelHeight = this.roundToTwoDecimalPlaces((differencePercentage / 100) * containerHeight);
+      const trianglePixelLength = this.roundToTwoDecimalPlaces(containerWidth / (this.data.values.length - 1));
+      const hypotenuse = this.roundToTwoDecimalPlaces(Math.hypot(trianglePixelHeight, trianglePixelLength));
+      const lineWidth = this.roundToTwoDecimalPlaces((hypotenuse / containerWidth) * 100);
+      const sinOfAngle = trianglePixelLength / hypotenuse;
+      const lineAngle = this.roundToTwoDecimalPlaces((90 - (Math.asin(sinOfAngle) * (180 / Math.PI))));
+      const angleValue = nextValue > value ? `-${lineAngle}deg` : `${lineAngle}deg`;
+      return `<li class="chart__line-point point-${itemIndex + 1}" style="top: ${topPosition}%; --line-width: ${lineWidth}cqw; --line-angle: ${angleValue}; --dataset-color: ${lineColor}" title="${value}">
+        <span class="chart__line-point-shape ${this.linePointShapes[index]}"></span>
+      </li>`;
+    }).join('');
+    return linesHtml;
+  }
+
+  updateLineWidths() {
+    this.lineTransitionPoint++;
+    if (this.lineTransitionPoint < this.data.values.length) {
+      const linePoints = this.querySelectorAll(`.point-${this.lineTransitionPoint}`);
+      linePoints.forEach((point, index) => {
+        point.classList.add('chart__line-point--transition');
+        console.log(index);
+        if (index === 0) {
+          console.log('adding listener');
+          point.addEventListener('transitionend', () => {this.updateLineWidths(); }, { once: true });
+        }
+      });
+    }
+  }
+
+  generateLineGroups() {
+    const lineGroupsHtml = this.data.values.map((item, index) => {
+      const lastClass = index === this.data.values.length - 1 ? 'last' : '';
+      return `
+        <div class="chart__line-group ${lastClass}">
+          <p class="chart__line-group-label">
+            ${item.label}
+          </p>
+          <ul class="chart__line-list">
+            ${this.generateLinePoints(item, index)}
+          </ul>
+        </div>
+        `;
+    }).join('');
+    return lineGroupsHtml;
   }
 
   generateYAxis() {
@@ -132,7 +199,7 @@ class BarChart extends HTMLElement {
     return lines;
   }
 
-  generateLegend() {
+  generateBarLegend() {
     const legendHtml = this.data.values[0].dataSets.map((item, index) => {
       const patternClass = this.showPatterns ? 'pattern-' + (index + 1) : '';
       const barColor = this.data.colors[index];
@@ -145,14 +212,48 @@ class BarChart extends HTMLElement {
     return legendHtml;
   }
 
+  generateLineLegend() {
+    const legendHtml = this.data.values[0].dataSets.map((item, index) => {
+      const lineColor = this.data.colors[index];
+      const label = Object.keys(item)[0];
+      return `<div class="chart__legend-item">
+        <span class="chart__legend-line-identifier ${this.linePointShapes[index]}" style="--dataset-color: ${lineColor}"></span>
+        <span class="chart__legend-label">${label}</span></div>`;
+
+    }).join('');
+    return legendHtml;
+  }
+
   render() {
+    if(this.chartType === 'line') {
+      this.renderLineChart();
+    } else {
+      this.renderBarChart();
+    }
+  }
+
+  renderLineChart() {
+    this.lines.classList.add('active');
+    this.lines.innerHTML = this.generateLineGroups();
+    this.yAxis.innerHTML = this.generateYAxis();
+    if (this.getAttribute('data-show-legend') === 'true') {
+      this.legend.innerHTML = this.generateLineLegend();
+    }
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.updateLineWidths();
+      });
+    });
+  }
+
+  renderBarChart() {
+    this.bars.classList.add('active');
     const numberOfBars = this.data.values.length;
     this.style.setProperty('--number-of-bar-groups', numberOfBars);
     this.bars.innerHTML = this.generateBarGroups();
     this.yAxis.innerHTML = this.generateYAxis();
-    this.xAxis.innerHTML = this.generateXAxis();
     if (this.getAttribute('data-show-legend') === 'true') {
-      this.legend.innerHTML = this.generateLegend();
+      this.legend.innerHTML = this.generateBarLegend();
     }
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -162,49 +263,4 @@ class BarChart extends HTMLElement {
   }
 }
 
-customElements.define('bar-chart', BarChart);
-
-const chart = document.getElementById('barChart');
-chart.chartData = {
-  values: [
-    { label: 'Monday',
-      dataSets: [ {a: 0.2}, {b: -0.1}, {c: -0.3}, {d: 0.4}, {e: 0.60}, {f: 0.9} ]
-    },
-    { label: 'Tuesday',
-      dataSets: [ {a: 0.56}, {b: 0.23}, {c: 0.89}, {d: 0.40}, {e: 0.70}, {f: 0.80} ]
-    },
-    { label: 'Wednesday',
-      dataSets: [ {a: 0.74}, {b: 0.97}, {c: 0.65}, {d: -0.48}, {e: 0.80}, {f: 0.86} ]
-    },
-  ],
-  colors: ['#25C7D9', '#F2D338', '#F2622E', '#03A678', '#8E44AD', '#F27457']
-};
-const updateButton = document.getElementById('updateButton');
-updateButton.addEventListener('click', () => {
-  const newData = Array.from({ length: 5 }, () => {
-    return Array.from({ length: 4 }, () => Math.floor(Math.random() * 50));
-  });
-  chart.chartData = {
-    values: newData.map((value, index) => ({
-      label: String.fromCharCode(85 + index),
-      dataSets: value.map((val, i) => ({ [String.fromCharCode(97 + i)]: val }))
-    })),
-    colors: ['#25C7D9', '#F2D338', '#F2622E', '#03A678', '#8E44AD']
-  };
-});
-
-const addNewButton = document.getElementById('addNew');
-addNewButton.addEventListener('click', () => {
-  const newChart = document.createElement('bar-chart');
-  newChart.setAttribute('class', 'bar-chart');
-  newChart.setAttribute('data-tick-marks', '5');
-  newChart.data = {
-    values: [
-      { label: 'A', dataSets: 20 },
-      { label: 'B', dataSets: 40 },
-      { label: 'C', dataSets: 60 },
-      { label: 'D', dataSets: 80 },
-    ]
-  };
-  document.querySelector('.wrapper').appendChild(newChart);
-});
+customElements.define('chart-wc', Chart);

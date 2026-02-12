@@ -4,23 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
-  <link rel="stylesheet" href="bar-chart.css">
+  <link rel="stylesheet" href="charts.css">
 </head>
 <body>
   <div class="wrapper">
-    <bar-chart id="barChart" class="chart" data-show-patterns="true" data-show-legend="true">
-    </bar-chart>
+    <chart-wc id="barChart" class="chart" data-show-patterns="true" data-show-legend="true" data-type="bar">
+    </chart-wc>
+  </div>
+  <div class="wrapper">
+    <chart-wc id="lineChart" class="chart" data-show-legend="true" data-type="line">
+    </chart-wc>
   </div>
 
-  <template data-bar-chart-template>
+  <template data-chart-template>
     <div class="chart__layout" data-layout>
-      <div class="chart__inner" data-inner>
-        <div class="chart__y-axis" data-y-axis></div>
-        <div class="chart__content">
-          <div class="chart__bars" data-bars></div>
-        </div>
+      <div class="chart__y-axis" data-y-axis></div>
+      <div class="chart__content">
+        <div class="chart__bars" data-bars></div>
+        <div class="chart__lines" data-lines></div>
       </div>
-      <div class="chart__x-axis" data-x-axis></div>
     </div>
     <div class="chart__legend" data-legend></div>
   </template>
@@ -31,8 +33,7 @@
   </div>
   
   <button id="updateButton">Update Data</button>
-  <button id="addNew">Add new</button>
-  <script src="bar-chart.js"></script>
-  <script src="line-chart.js"></script>
+  <script src="charts.js"></script>
+  <script src="other.js"></script>
 </body>
 </html>

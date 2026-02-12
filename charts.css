@@ -14,23 +14,22 @@ body {
 
 .wrapper {
   width: 100%;
-  
   max-width: 100%;
-  margin-bottom: 3rem;
+  margin-bottom: 5rem;
 }
 
 .chart {
   --clr-stroke: #ddd;
   --bar-color: #F27457;
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 .chart__layout {
+  container-type: size;
   width: 800px;
   max-width: 100%;
   height: 100%;
   display: flex;
-  flex-direction: column;
   position: relative;
   aspect-ratio: 8 / 5;
 }
@@ -53,13 +52,10 @@ body {
 .chart__legend-label {
   font-size: 1rem;
 }
-.chart__inner {
-  container-type: size;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-grow: 1;
-  position: relative;
+.chart__legend-line-identifier {
+  display: block;
+  width: 0.75rem; 
+  height: 0.75rem;
 }
 .chart__content {
   width: 100%;
@@ -75,34 +71,45 @@ body {
   flex-grow: 0;
   flex-shrink: 0;
 }
-.chart__x-axis {
-  width: 100%;
-  height: 2rem;
-  flex-grow: 0; 
-  flex-shrink: 0;
-  padding-bottom: 1px;
-}
 .chart__bars {
+  display: none;
+}
+.chart__bars.active {
   --bars-container-height: 100%;
   --positive-offset-padding: 0cqh;
   --negative-offset-padding: 0cqh;
+  display: grid;
   container-type: size;
   width: 100%;
   height: var(--bars-container-height);
   flex-grow: 1;
-  display: grid;
   grid-template-columns: repeat(var(--number-of-bar-groups), 1fr);
-  gap: 1.5rem;
+  gap: 3cqw;
   align-items: end;
   padding: 0 0.75rem;
 }
 .chart__bar-group {
   position: relative;
+  display: block;
+  /* width: 100%; */
+  height: 100%;
+}
+.chart__bar-list {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10px, 1fr));
-  gap: 0.25rem;
+  gap: 1cqw;
   align-items: stretch;
+  width: 100%;
   height: 100%;
+}
+.chart__bar-group-label {
+  position: absolute;
+  display: block;
+  text-align: center;
+  bottom: -1.5rem;
+  width: 100%;
+  font-size: 0.75rem;
 }
 .chart__bar-group::after {
   content: '';
@@ -215,13 +222,105 @@ body {
   display: block;
   margin-top: -0.35rem;
 }
-.chart__x-axis {
-  display: grid;
-  grid-template-columns: repeat(var(--number-of-bar-groups), 1fr);
-  padding: 0.5rem 0.75rem 0 2.75rem;
-  gap: 1.5rem;
-}
 .chart__y-axis-label {
   font-size: 0.75rem;
   text-align: center;
+}
+
+.chart__lines {
+  display: none;
+}
+.chart__lines.active {
+  container-type: size;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+}
+.chart__line-group {
+  display: block;
+  position: relative;
+  width: 1px;
+  height: 100%;
+  background-color: var(--clr-stroke);
+}
+.chart__line-group:last-of-type,
+.chart__line-group:first-of-type {
+  background-color: transparent;
+}
+.chart__line-group-label {
+  position: absolute;
+  display: block;
+  text-align: center;
+  bottom: -1.5rem;
+  left: 0;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+}
+.chart__line-point {
+  --line-width: 0cqw;
+  --dataset-color: green;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 0.75rem;
+  height: 0.75rem;
+  left: -0.375rem;
+  margin-top: -0.375rem;
+}
+.chart__line-group:not(.last) .chart__line-point::after {
+  content: '';
+  display: block;
+  height: 3px;
+  margin-left: 0.375rem;
+  background-color: var(--dataset-color);
+  width: 0;
+  transform: rotate(var(--line-angle));
+  transform-origin: 0 0;
+  transition: width .3s linear(0, 1);
+}
+.chart__line-group:not(.last) .chart__line-point--transition::after {
+  width: var(--line-width);
+}
+.chart__line-point-shape { 
+  display: block;
+  position: absolute;
+  width: 100%; 
+  height: 100%;
+  z-index: 10;
+}
+.square {
+  background-color: var(--dataset-color);
+}
+.circle {
+  background-color: var(--dataset-color);
+  border-radius: 50%;
+}
+.diamond { 
+  background-color: var(--dataset-color);
+  transform: rotate(45deg); 
+}
+.up-triangle { 
+  width: 0; 
+  height: 0; 
+  border-left: 0.375rem solid transparent; 
+  border-right: 0.375rem solid transparent; 
+  border-bottom: 0.75rem solid var(--dataset-color); 
+}
+.down-triangle { 
+  width: 0; 
+  height: 0; 
+  border-left: 0.375rem solid transparent; 
+  border-right: 0.375rem solid transparent; 
+  border-top: 0.75rem solid var(--dataset-color); 
+}
+.box { 
+  background-color: #ffffff;
+  border: 2px solid var(--dataset-color); 
+} 
+.ring { 
+  background-color: #ffffff;
+  border: 2px solid var(--dataset-color); 
+  border-radius: 50%;
 }
